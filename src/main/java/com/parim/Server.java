@@ -41,6 +41,10 @@ public class Server {
             clientThread.sendRegisterResult("UserRegisterSuccessful");
         }
         else clientThread.sendRegisterResult("UserRegisterUnsuccessful");
-
+    }
+    public void receivedUserLoginEvent(UserEvent userEvent, ClientThread clientThread) {
+        String username = userEvent.getUsername(), password = userEvent.getPassword();
+        if (userAccess.findUser(username, password) != null) clientThread.sendLoginResult("UserLoginSuccessful");
+        else clientThread.sendLoginResult("UserLoginUnsuccessful");
     }
 }

@@ -22,10 +22,14 @@ public class ClientThread extends Thread {
             String title = clientRespond.getTitle();
             if (title.equals("ClientClosedEvent")) server.receivedClientClosedEvent(this);
             if (title.equals("UserRegisterEvent")) server.receivedUserRegisterEvent((UserEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("UserLoginEvent")) server.receivedUserLoginEvent((UserEvent) clientRespond.getFormEvent(), this);
         }
     }
 
     public void sendRegisterResult(String result) {
+        connectToClient.send(new Message(result, null));
+    }
+    public void sendLoginResult(String result) {
         connectToClient.send(new Message(result, null));
     }
 }
