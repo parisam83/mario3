@@ -12,7 +12,7 @@ import java.util.ArrayList;
 public class Server {
     private ServerSocket serverSocket;
     private UserAccess userAccess;
-    private ArrayList<ClientThread> openClientThreads;
+    private ArrayList<ClientThread> openClientThreads = new ArrayList<>();
     public Server() throws IOException {
         serverSocket = new ServerSocket(9000);
         userAccess = new UserAccess();
