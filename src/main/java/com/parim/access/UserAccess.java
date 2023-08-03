@@ -32,10 +32,10 @@ public class UserAccess {
         }
     }
     public void add(String username, String password){
-        User user = new User(numberOfUsers() + 1, username, password);
+        User user = new User(username, password);
         users.add(user);
         try {
-            mapper.writeValue(new FileWriter(directory + "user" + String.valueOf(user.getId()) + ".json"), user);
+            mapper.writeValue(new FileWriter(directory + "user" + String.valueOf(numberOfUsers() + 1) + ".json"), user);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
