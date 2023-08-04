@@ -6,5 +6,6 @@ public abstract class Potion extends Item {
     public Potion(){
         MaxAmount = 10;
         InTime = 24*3600;
+        Cost = 137;
     }
 }

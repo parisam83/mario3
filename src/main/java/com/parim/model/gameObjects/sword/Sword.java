@@ -13,6 +13,7 @@ public class Sword extends Item {
         InTime = 24*3600;
         MaxAmountByOneUser = 1;
         HowToPay[1] = true;
+        Cost = 121;
     }
 
     public double getBlockRange() {
