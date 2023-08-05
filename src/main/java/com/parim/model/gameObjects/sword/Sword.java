@@ -10,10 +10,10 @@ public class Sword extends Item {
     private final int coolDown = ConfigLoader.getInstance().getProperty(Integer.class, "Sword.coolDown");
 
     public Sword(){
-        InTime = 24*3600;
-        MaxAmountByOneUser = 1;
-        HowToPay[1] = true;
-        Cost = 121;
+        IN_TIME = 24*3600;
+        MAX_AMOUNT_BY_ONE_USER = 1;
+        PAYS_WITH_DIAMOND = true;
+        COST = 121;
     }
 
     public double getBlockRange() {

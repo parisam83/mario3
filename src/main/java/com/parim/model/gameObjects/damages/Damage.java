@@ -4,7 +4,7 @@ import com.parim.model.gameObjects.Item;
 
 public abstract class Damage extends Item {
     public Damage(){
-        MinLevel = 2;
-        Cost = 87;
+        MIN_LEVEL = 2;
+        COST = 87;
     }
 }

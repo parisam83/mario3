@@ -1,6 +1,7 @@
 package com.parim;
 
 import com.parim.access.UserAccess;
+import com.parim.event.ItemEvent;
 import com.parim.event.UserEvent;
 import com.parim.model.User;
 
@@ -37,14 +38,17 @@ public class Server {
     public void receivedUserRegisterEvent(UserEvent userEvent, ClientThread clientThread) {
         String username = userEvent.getUser().getUsername(), password = userEvent.getUser().getPassword();
         if (userAccess.findUser(username, password) == null) {
-            userAccess.add(username, password);
+            clientThread.setUser(userAccess.add(username, password));
             clientThread.sendRegisterResult("UserRegisterSuccessful");
         }
         else clientThread.sendRegisterResult("UserRegisterUnsuccessful");
     }
     public void receivedUserLoginEvent(UserEvent userEvent, ClientThread clientThread) {
         String username = userEvent.getUser().getUsername(), password = userEvent.getUser().getPassword();
-        if (userAccess.findUser(username, password) != null) clientThread.sendLoginResult("UserLoginSuccessful");
+        if (userAccess.findUser(username, password) != null) {
+            clientThread.setUser(userAccess.findUser(username, password));
+            clientThread.sendLoginResult("UserLoginSuccessful");
+        }
         else clientThread.sendLoginResult("UserLoginUnsuccessful");
     }
 }

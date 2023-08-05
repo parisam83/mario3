@@ -4,8 +4,8 @@ import com.parim.model.gameObjects.Item;
 
 public abstract class Potion extends Item {
     public Potion(){
-        MaxAmount = 10;
-        InTime = 24*3600;
-        Cost = 137;
+        MAX_AMOUNT = 10;
+        IN_TIME = 24*3600;
+        COST = 54;
     }
 }

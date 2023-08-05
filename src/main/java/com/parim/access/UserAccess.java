@@ -31,11 +31,12 @@ public class UserAccess {
             }
         }
     }
-    public void add(String username, String password){
+    public User add(String username, String password){
         User user = new User(username, password);
         users.add(user);
         try {
             mapper.writeValue(new FileWriter(directory + "user" + String.valueOf(numberOfUsers() + 1) + ".json"), user);
+            return user;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
