@@ -1,13 +1,24 @@
 package com.parim;
 
+import com.parim.event.BuyItemEvent;
 import com.parim.event.ItemEvent;
 import com.parim.event.Message;
 import com.parim.event.UserEvent;
+import com.parim.loader.ConfigLoader;
 import com.parim.model.ItemOfClient;
 import com.parim.model.User;
+import com.parim.model.gameObjects.Item;
+import com.parim.model.gameObjects.damages.DamageBomb;
+import com.parim.model.gameObjects.damages.Hammer;
+import com.parim.model.gameObjects.damages.SpeedBomb;
+import com.parim.model.gameObjects.potions.HealthPotion;
+import com.parim.model.gameObjects.potions.InvisibilityPotion;
+import com.parim.model.gameObjects.potions.SpeedPotion;
+import com.parim.model.gameObjects.sword.Sword;
 
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Date;
 
 public class ClientThread extends Thread {
     private Socket socket;
@@ -28,20 +39,8 @@ public class ClientThread extends Thread {
             if (title.equals("ClientClosedEvent")) server.receivedClientClosedEvent(this);
             if (title.equals("UserRegisterEvent")) server.receivedUserRegisterEvent((UserEvent) clientRespond.getFormEvent(), this);
             if (title.equals("UserLoginEvent")) server.receivedUserLoginEvent((UserEvent) clientRespond.getFormEvent(), this);
-            if (title.equals("ItemEvent")) receivedItemEvent();
-        }
-    }
-
-    private void receivedItemEvent(){
-        ItemEvent itemEvent = user.GetItems();
-        ArrayList<ItemOfClient> availableItems = itemEvent.getAvailableItems();
-        connectToClient.send(new Message("ItemEvent", itemEvent));
-        if (availableItems.size() > 1){
-            ItemEvent comboItemEvent = new ItemEvent(new ArrayList<ItemOfClient>(){{
-                add(availableItems.get(0));
-                add(availableItems.get(1));
-            }}, null);
-            connectToClient.send(new Message("ComboItemEvent", comboItemEvent));
+            if (title.equals("ItemEvent")) server.receivedItemEvent(this);
+            if (title.equals("BuyItemEvent")) server.receivedBuyItemEvent((BuyItemEvent) clientRespond.getFormEvent(), this);
         }
     }
     public void sendRegisterResult(String result) {
@@ -50,7 +49,15 @@ public class ClientThread extends Thread {
     public void sendLoginResult(String result) {
         connectToClient.send(new Message(result, null));
     }
-
+    public void sendItemEvent(ItemEvent itemEvent){
+        connectToClient.send(new Message("ItemEvent", itemEvent));
+    }
+    public void sendComboItemEvent(ItemEvent comboItemEvent){
+        connectToClient.send(new Message("ComboItemEvent", comboItemEvent));
+    }
+    public void sendBuyItemEvent(BuyItemEvent buyItemEvent){
+        connectToClient.send(new Message("BuyItemEvent", buyItemEvent));
+    }
     public User getUser() {
         return user;
     }
