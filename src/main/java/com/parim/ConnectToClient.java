@@ -7,6 +7,7 @@ import com.parim.event.Message;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.Socket;
+import java.util.NoSuchElementException;
 import java.util.Scanner;
 
 public class ConnectToClient {
@@ -33,10 +34,16 @@ public class ConnectToClient {
         }
     }
     public Message receive(){
+        String nextLine;
         try {
-            return mapper.readValue(input.nextLine(), Message.class);
+            try {
+                nextLine = input.nextLine();
+            } catch (NoSuchElementException e){
+                return null;
+            }
+            return mapper.readValue(nextLine, Message.class);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
+            throw new RuntimeException();
         }
     }
 }

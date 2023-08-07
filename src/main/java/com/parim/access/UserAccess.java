@@ -48,6 +48,21 @@ public class UserAccess {
                 return user;
         return null;
     }
+    public int findUserId(String username, String password){
+        read();
+        for (User user : users)
+            if (user.getUsername().equals(username) && user.getPassword().equals(password))
+                return users.indexOf(user);
+        throw new RuntimeException();
+    }
+    public void update(User user){
+        int index = findUserId(user.getUsername(), user.getPassword()) + 1;
+        try {
+            mapper.writeValue(new FileWriter(directory + "user" + String.valueOf(index) + ".json"), user);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public int numberOfUsers(){
         if (databaseFile.list() == null)

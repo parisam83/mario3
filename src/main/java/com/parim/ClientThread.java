@@ -1,6 +1,8 @@
 package com.parim;
 
 import com.parim.event.*;
+import com.parim.event.chat.block.BlockUserEvent;
+import com.parim.event.chat.block.UnblockUserEvent;
 import com.parim.loader.ConfigLoader;
 import com.parim.model.Chat;
 import com.parim.model.ItemOfClient;
@@ -33,6 +35,7 @@ public class ClientThread extends Thread {
     public void run() {
         while (!socket.isClosed()){
             Message clientRespond = connectToClient.receive();
+            if (clientRespond == null) break;
             String title = clientRespond.getTitle();
             if (title.equals("ClientClosedEvent")) server.receivedClientClosedEvent(this);
             if (title.equals("UserRegisterEvent")) server.receivedUserRegisterEvent((UserEvent) clientRespond.getFormEvent(), this);
@@ -42,8 +45,20 @@ public class ClientThread extends Thread {
             if (title.equals("ChatListRequest")) server.receivedChatListRequest(this);
             if (title.equals("MessageEvent")) server.receivedMessageEvent((MessageEvent) clientRespond.getFormEvent(), this);
             if (title.equals("SendMessageEvent")) server.receivedSendMessageEvent((SendMessageEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("ListOfBlockedUsernamesEvent")) sendListOfBlockedUsernames();
+            if (title.equals("BlockUserEvent")) blockUser((BlockUserEvent) clientRespond.getFormEvent());
+            if (title.equals("UnblockUserEvent")) unblockUser((UnblockUserEvent) clientRespond.getFormEvent());
         }
         server.receivedClientClosedEvent(this);
+    }
+    private void blockUser(BlockUserEvent blockUserEvent){
+        user.blockUser(blockUserEvent.getUsername());
+    }
+    private void unblockUser(UnblockUserEvent unblockUserEvent){
+        user.unblockUser(unblockUserEvent.getUsername());
+    }
+    private void sendListOfBlockedUsernames(){
+        connectToClient.send(new Message("ListOfBlockedUsernamesEvent", new ListOfBlockedUsernamesEvent(user.getBlockedUsernames())));
     }
     public void sendChatListRequest(ArrayList<String> chatList){
         connectToClient.send(new Message("ChatListEvent", new ChatListEvent(chatList)));

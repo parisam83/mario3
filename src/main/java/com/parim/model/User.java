@@ -5,7 +5,7 @@ import java.util.ArrayList;
 public class User {
     private String username, password;
     private int coins = 100, diamond;
-    private final ArrayList<String> chatList = new ArrayList<>();
+    private final ArrayList<String> chatList = new ArrayList<>(), blockedUsernames = new ArrayList<>();
     public User(){}
     public User(String username, String password){
         this.username = username;
@@ -17,6 +17,14 @@ public class User {
     }
     public void reduceDiamonds(int amount){
         diamond -= amount;
+    }
+    public void unblockUser(String username){
+        if (blockedUsernames.contains(username))
+            blockedUsernames.remove(username);
+    }
+    public void blockUser(String username){
+        if (!blockedUsernames.contains(username))
+            blockedUsernames.add(username);
     }
     // Getters and Setters
     public String getUsername() {
@@ -53,5 +61,9 @@ public class User {
 
     public ArrayList<String> getChatList() {
         return chatList;
+    }
+
+    public ArrayList<String> getBlockedUsernames() {
+        return blockedUsernames;
     }
 }

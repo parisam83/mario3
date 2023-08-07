@@ -56,6 +56,7 @@ public class Server {
     }
 
     public void receivedClientClosedEvent(ClientThread clientThread) {
+        userAccess.update(clientThread.getUser());
         openClientThreads.remove(clientThread);
     }
     public void receivedUserRegisterEvent(UserEvent userEvent, ClientThread clientThread) {
