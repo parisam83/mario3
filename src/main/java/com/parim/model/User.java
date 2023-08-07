@@ -1,8 +1,11 @@
 package com.parim.model;
 
+import java.util.ArrayList;
+
 public class User {
     private String username, password;
     private int coins = 100, diamond;
+    private final ArrayList<String> chatList = new ArrayList<>();
     public User(){}
     public User(String username, String password){
         this.username = username;
@@ -46,5 +49,9 @@ public class User {
 
     public void setDiamond(int diamond) {
         this.diamond = diamond;
+    }
+
+    public ArrayList<String> getChatList() {
+        return chatList;
     }
 }

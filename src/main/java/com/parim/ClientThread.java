@@ -1,10 +1,8 @@
 package com.parim;
 
-import com.parim.event.BuyItemEvent;
-import com.parim.event.ItemEvent;
-import com.parim.event.Message;
-import com.parim.event.UserEvent;
+import com.parim.event.*;
 import com.parim.loader.ConfigLoader;
+import com.parim.model.Chat;
 import com.parim.model.ItemOfClient;
 import com.parim.model.User;
 import com.parim.model.gameObjects.Item;
@@ -41,7 +39,14 @@ public class ClientThread extends Thread {
             if (title.equals("UserLoginEvent")) server.receivedUserLoginEvent((UserEvent) clientRespond.getFormEvent(), this);
             if (title.equals("ItemEvent")) server.receivedItemEvent(this);
             if (title.equals("BuyItemEvent")) server.receivedBuyItemEvent((BuyItemEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("ChatListRequest")) server.receivedChatListRequest(this);
+            if (title.equals("MessageEvent")) server.receivedMessageEvent((MessageEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("SendMessageEvent")) server.receivedSendMessageEvent((SendMessageEvent) clientRespond.getFormEvent(), this);
         }
+        server.receivedClientClosedEvent(this);
+    }
+    public void sendChatListRequest(ArrayList<String> chatList){
+        connectToClient.send(new Message("ChatListEvent", new ChatListEvent(chatList)));
     }
     public void sendRegisterResult(String result) {
         connectToClient.send(new Message(result, null));
@@ -57,6 +62,9 @@ public class ClientThread extends Thread {
     }
     public void sendBuyItemEvent(BuyItemEvent buyItemEvent){
         connectToClient.send(new Message("BuyItemEvent", buyItemEvent));
+    }
+    public void sendMessageEvent(Chat chat){
+        connectToClient.send(new Message("MessageEvent", new MessageEvent(chat)));
     }
     public User getUser() {
         return user;

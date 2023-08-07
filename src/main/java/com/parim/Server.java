@@ -1,11 +1,9 @@
 package com.parim;
 
 import com.parim.access.UserAccess;
-import com.parim.event.BuyItemEvent;
-import com.parim.event.ItemEvent;
-import com.parim.event.Message;
-import com.parim.event.UserEvent;
+import com.parim.event.*;
 import com.parim.loader.ConfigLoader;
+import com.parim.model.Chat;
 import com.parim.model.ItemOfClient;
 import com.parim.model.User;
 import com.parim.model.gameObjects.Item;
@@ -26,7 +24,8 @@ import java.util.Date;
 public class Server {
     private ServerSocket serverSocket;
     private UserAccess userAccess;
-    private ArrayList<ClientThread> openClientThreads = new ArrayList<>();
+    private ArrayList<ClientThread> openClientThreads = new ArrayList<>(), allClientThreads = new ArrayList<>();
+    private ArrayList<Chat> allChats = new ArrayList<>();
     private final static ArrayList<Item> ITEMS = new ArrayList<Item>(){
         {
             add(new Sword());
@@ -48,6 +47,7 @@ public class Server {
             Socket socket = serverSocket.accept();
             ClientThread clientThread = new ClientThread(socket, this);
             openClientThreads.add(clientThread);
+            allClientThreads.add(clientThread);
             clientThread.start();
         }
     }
@@ -58,7 +58,6 @@ public class Server {
     public void receivedClientClosedEvent(ClientThread clientThread) {
         openClientThreads.remove(clientThread);
     }
-
     public void receivedUserRegisterEvent(UserEvent userEvent, ClientThread clientThread) {
         String username = userEvent.getUser().getUsername(), password = userEvent.getUser().getPassword();
         if (userAccess.findUser(username, password) == null) {
@@ -104,6 +103,25 @@ public class Server {
         }
         clientThread.sendBuyItemEvent(buyItemEvent);
     }
+    public void receivedChatListRequest(ClientThread clientThread){
+        ArrayList<String> chatList = new ArrayList<>();
+        for (Chat chat : allChats) {
+            if (chat.getUsername1().equals(clientThread.getUser())) chatList.add(chat.getUsername2());
+            if (chat.getUsername2().equals(clientThread.getUser())) chatList.add(chat.getUsername1());
+        }
+        clientThread.sendChatListRequest(chatList);
+    }
+    public void receivedMessageEvent(MessageEvent messageEvent, ClientThread clientThread){
+        Chat chat = findChat(messageEvent.getChat().getUsername1(), clientThread.getUser().getUsername());
+        System.out.println("sender : " + chat.getUsername2() +"\nreceiver: " + chat.getUsername1());
+        System.out.println(chat.getMessages() + "\n");
+        clientThread.sendMessageEvent(chat);
+    }
+    public void receivedSendMessageEvent(SendMessageEvent sendMessageEvent, ClientThread clientThread){
+        Chat chat = findChat(sendMessageEvent.getSender(), sendMessageEvent.getReceiver());
+        chat.addMessage(sendMessageEvent.getSender(), sendMessageEvent.getMessage());
+        clientThread.sendMessageEvent(chat);
+    }
     public boolean checkItem(Item item, User user){
         if (item.isPAYS_WITH_DIAMOND() && item.getCOST() > user.getDiamond() * ConfigLoader.getInstance().getProperty(Integer.class, "Shop.diamondConversionRate")) return false;
         if (item.getCOST() > user.getCoins() && item.getCOST() > user.getDiamond() * ConfigLoader.getInstance().getProperty(Integer.class, "Shop.diamondConversionRate")) return false;
@@ -117,6 +135,19 @@ public class Server {
         for (Item item : ITEMS)
             if (item.getClass().getSimpleName().equals(name))
                 return item;
+        throw new RuntimeException();
+    }
+    private Chat findChat(String username1, String username2){
+        for (Chat chat : allChats)
+            if ((chat.getUsername1().equals(username1) && chat.getUsername2().equals(username2))
+            ||  (chat.getUsername1().equals(username2) && chat.getUsername2().equals(username1)))
+                return chat;
+        return new Chat(username1, username2);
+    }
+    private ClientThread findClientThread(String username){
+        for (ClientThread clientThread : allClientThreads)
+            if (clientThread.getUser().getUsername().equals(username))
+                return clientThread;
         throw new RuntimeException();
     }
     public ItemEvent getItemEvent(User user){
