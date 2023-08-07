@@ -26,6 +26,12 @@ public class User {
         if (!blockedUsernames.contains(username))
             blockedUsernames.add(username);
     }
+    public void addChatList(String username){
+        chatList.add(username);
+    }
+    public void removeChatList(String username){
+        chatList.remove(username);
+    }
     // Getters and Setters
     public String getUsername() {
         return username;

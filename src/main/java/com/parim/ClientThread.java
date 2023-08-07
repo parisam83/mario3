@@ -3,22 +3,11 @@ package com.parim;
 import com.parim.event.*;
 import com.parim.event.chat.block.BlockUserEvent;
 import com.parim.event.chat.block.UnblockUserEvent;
-import com.parim.loader.ConfigLoader;
 import com.parim.model.Chat;
-import com.parim.model.ItemOfClient;
 import com.parim.model.User;
-import com.parim.model.gameObjects.Item;
-import com.parim.model.gameObjects.damages.DamageBomb;
-import com.parim.model.gameObjects.damages.Hammer;
-import com.parim.model.gameObjects.damages.SpeedBomb;
-import com.parim.model.gameObjects.potions.HealthPotion;
-import com.parim.model.gameObjects.potions.InvisibilityPotion;
-import com.parim.model.gameObjects.potions.SpeedPotion;
-import com.parim.model.gameObjects.sword.Sword;
 
 import java.net.Socket;
 import java.util.ArrayList;
-import java.util.Date;
 
 public class ClientThread extends Thread {
     private Socket socket;
@@ -46,21 +35,16 @@ public class ClientThread extends Thread {
             if (title.equals("MessageEvent")) server.receivedMessageEvent((MessageEvent) clientRespond.getFormEvent(), this);
             if (title.equals("SendMessageEvent")) server.receivedSendMessageEvent((SendMessageEvent) clientRespond.getFormEvent(), this);
             if (title.equals("ListOfBlockedUsernamesEvent")) sendListOfBlockedUsernames();
-            if (title.equals("BlockUserEvent")) blockUser((BlockUserEvent) clientRespond.getFormEvent());
-            if (title.equals("UnblockUserEvent")) unblockUser((UnblockUserEvent) clientRespond.getFormEvent());
+            if (title.equals("BlockUserEvent")) server.blockUser((BlockUserEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("UnblockUserEvent")) server.unblockUser((UnblockUserEvent) clientRespond.getFormEvent(), this);
         }
         server.receivedClientClosedEvent(this);
-    }
-    private void blockUser(BlockUserEvent blockUserEvent){
-        user.blockUser(blockUserEvent.getUsername());
-    }
-    private void unblockUser(UnblockUserEvent unblockUserEvent){
-        user.unblockUser(unblockUserEvent.getUsername());
     }
     private void sendListOfBlockedUsernames(){
         connectToClient.send(new Message("ListOfBlockedUsernamesEvent", new ListOfBlockedUsernamesEvent(user.getBlockedUsernames())));
     }
     public void sendChatListRequest(ArrayList<String> chatList){
+        System.out.println(chatList);
         connectToClient.send(new Message("ChatListEvent", new ChatListEvent(chatList)));
     }
     public void sendRegisterResult(String result) {
@@ -79,6 +63,7 @@ public class ClientThread extends Thread {
         connectToClient.send(new Message("BuyItemEvent", buyItemEvent));
     }
     public void sendMessageEvent(Chat chat){
+        System.out.println("server of user " + user.getUsername() + " send " + chat.getMessages());
         connectToClient.send(new Message("MessageEvent", new MessageEvent(chat)));
     }
     public User getUser() {

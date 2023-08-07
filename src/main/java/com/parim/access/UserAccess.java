@@ -2,6 +2,7 @@ package com.parim.access;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.parim.Server;
 import com.parim.model.User;
 
 import java.io.File;
@@ -62,6 +63,20 @@ public class UserAccess {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+    public boolean usernameExists(String username){
+        read();
+        for (User user : users)
+            if (user.getUsername().equals(username))
+                return true;
+        return false;
+    }
+    public User findUserByUsername(String username){
+        read();
+        for (User user : users)
+            if (user.getUsername().equals(username))
+                return user;
+        return null;
     }
 
     public int numberOfUsers(){
