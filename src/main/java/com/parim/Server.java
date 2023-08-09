@@ -1,12 +1,13 @@
 package com.parim;
 
-import com.parim.access.UserAccess;
 import com.parim.event.*;
 import com.parim.event.chat.block.BlockUserEvent;
 import com.parim.event.chat.block.UnblockUserEvent;
+import com.parim.event.room.RoomEvent;
 import com.parim.loader.ConfigLoader;
 import com.parim.model.Chat;
 import com.parim.model.ItemOfClient;
+import com.parim.model.Room;
 import com.parim.model.User;
 import com.parim.model.gameObjects.Item;
 import com.parim.model.gameObjects.damages.DamageBomb;
@@ -25,9 +26,10 @@ import java.util.Date;
 
 public class Server {
     private ServerSocket serverSocket;
-    private UserAccess userAccess;
     private ArrayList<ClientThread> openClientThreads = new ArrayList<>(), allClientThreads = new ArrayList<>();
     private ArrayList<Chat> allChats = new ArrayList<>();
+    private ArrayList<Room> rooms = new ArrayList<>();
+    private ArrayList<User> users = new ArrayList<>();
     private final static ArrayList<Item> ITEMS = new ArrayList<Item>(){
         {
             add(new Sword());
@@ -40,8 +42,7 @@ public class Server {
         }
     };
     public Server() throws IOException {
-        serverSocket = new ServerSocket(9000);
-        userAccess = new UserAccess();
+        serverSocket = new ServerSocket(9001);
         runServer();
     }
     private void runServer() throws IOException {
@@ -58,21 +59,22 @@ public class Server {
     }
 
     public void receivedClientClosedEvent(ClientThread clientThread) {
-        userAccess.update(clientThread.getUser());
         openClientThreads.remove(clientThread);
     }
     public void receivedUserRegisterEvent(UserEvent userEvent, ClientThread clientThread) {
         String username = userEvent.getUser().getUsername(), password = userEvent.getUser().getPassword();
-        if (userAccess.findUser(username, password) == null) {
-            clientThread.setUser(userAccess.add(username, password));
+        if (findUser(username, password) == null) {
+            User user = new User(username, password);
+            clientThread.setUser(user);
+            users.add(user);
             clientThread.sendRegisterResult("UserRegisterSuccessful");
         }
         else clientThread.sendRegisterResult("UserRegisterUnsuccessful");
     }
     public void receivedUserLoginEvent(UserEvent userEvent, ClientThread clientThread) {
         String username = userEvent.getUser().getUsername(), password = userEvent.getUser().getPassword();
-        if (userAccess.findUser(username, password) != null) {
-            clientThread.setUser(userAccess.findUser(username, password));
+        if (findUser(username, password) != null) {
+            clientThread.setUser(findUser(username, password));
             clientThread.sendLoginResult("UserLoginSuccessful");
         }
         else clientThread.sendLoginResult("UserLoginUnsuccessful");
@@ -110,25 +112,39 @@ public class Server {
         clientThread.sendChatListRequest(clientThread.getUser().getChatList());
     }
     public void receivedMessageEvent(MessageEvent messageEvent, ClientThread clientThread){
-        if (userAccess.usernameExists(messageEvent.getChat().getUsername1())) {
+        if (usernameExists(messageEvent.getChat().getUsername1())) {
             Chat chat = findChat(messageEvent.getChat().getUsername1(), clientThread.getUser().getUsername());
             clientThread.sendMessageEvent(chat);
         }
     }
-    public void receivedSendMessageEvent(SendMessageEvent sendMessageEvent, ClientThread clientThread){
-        Chat chat = findChat(sendMessageEvent.getSender(), sendMessageEvent.getReceiver());
-        addChatToUsers(sendMessageEvent.getReceiver(), sendMessageEvent.getSender());
-        chat.addMessage(sendMessageEvent.getSender(), sendMessageEvent.getMessage());
-        ClientThread receiver = findClientThread(sendMessageEvent.getReceiver());
-        if (receiver != null) receiver.sendMessageEvent(chat);
-    }
     public void blockUser(BlockUserEvent blockUserEvent, ClientThread clientThread){
-        if (userAccess.usernameExists(blockUserEvent.getUsername()))
+        if (usernameExists(blockUserEvent.getUsername()))
             clientThread.getUser().blockUser(blockUserEvent.getUsername());
     }
     public void unblockUser(UnblockUserEvent unblockUserEvent, ClientThread clientThread){
-        if (userAccess.usernameExists(unblockUserEvent.getUsername()))
+        if (usernameExists(unblockUserEvent.getUsername()))
             clientThread.getUser().unblockUser(unblockUserEvent.getUsername());
+    }
+    public void createNewRoom(RoomEvent roomEvent, ClientThread clientThread){
+        Room room = roomEvent.getRoom();
+        room.setBoss(clientThread.getUser().getUsername());
+        room.setId(String.valueOf(rooms.size()));
+        rooms.add(room);
+        clientThread.sendRoomEvent(roomEvent);
+    }
+    public void joinRoom(RoomEvent roomEvent, ClientThread clientThread){
+        Room room = findRoom(roomEvent.getRoom().getId(), roomEvent.getRoom().getPassword());
+        if (room == null) clientThread.sendRoomEvent(null);
+        else {
+            room.addMember(clientThread.getUser().getUsername());
+            clientThread.sendRoomEvent(roomEvent);
+        }
+    }
+    private Room findRoom(String id, String password){
+        for (Room room : rooms)
+            if (room.getId().equals(id) && room.getPassword().equals(password))
+                return room;
+        return null;
     }
     public boolean checkItem(Item item, User user){
         if (item.isPAYS_WITH_DIAMOND() && item.getCOST() > user.getDiamond() * ConfigLoader.getInstance().getProperty(Integer.class, "Shop.diamondConversionRate")) return false;
@@ -158,8 +174,26 @@ public class Server {
         addChatToUsers(username1, username2);
         return chat;
     }
+    private User findUser(String username, String password){
+        for (User user : users)
+            if (user.getUsername().equals(username) && user.getPassword().equals(password))
+                return user;
+        return null;
+    }
+    private boolean usernameExists(String username){
+        for (User user : users)
+            if (user.getUsername().equals(username))
+                return true;
+        return false;
+    }
+    private User findUserByUsername(String username){
+        for (User user : users)
+            if (user.getUsername().equals(username))
+                return user;
+        throw new RuntimeException();
+    }
     private void addChatToUsers(String username1, String username2){
-        User u1 = userAccess.findUserByUsername(username1), u2 = findClientThread(username2).getUser();
+        User u1 = findUserByUsername(username1), u2 = findUserByUsername(username2);
         u1.removeChatList(username2);
         u1.addChatList(username2);
 
@@ -190,5 +224,66 @@ public class Server {
 
     public static ArrayList<Item> getITEMS() {
         return ITEMS;
+    }
+    public void receivedSendMessageEvent(SendMessageEvent sendMessageEvent){
+        Chat chat = findChat(sendMessageEvent.getSender(), sendMessageEvent.getReceiver());
+        addChatToUsers(sendMessageEvent.getReceiver(), sendMessageEvent.getSender());
+        chat.addMessage(sendMessageEvent.getSender(), sendMessageEvent.getMessage());
+        ClientThread receiver = findClientThread(sendMessageEvent.getReceiver());
+        if (receiver != null) {
+            receiver.sendMessageEvent(chat);
+            receiver.sendNotificationEvent(sendMessageEvent.getSender(), sendMessageEvent.getMessage(),"Chat");
+        }
+    }
+    public void inviteToRoom(RoomEvent roomEvent, ClientThread clientThread) {
+        String sender = clientThread.getUser().getUsername(), receiver = roomEvent.getSomeUser();
+        String id = roomEvent.getRoom().getId(), password = roomEvent.getRoom().getPassword();
+
+        receivedSendMessageEvent(new SendMessageEvent(sender, receiver, "You can join our room:\nid = " + id + "\npassword = " + password));
+    }
+    public void removeFromRoom(RoomEvent roomEvent, ClientThread clientThread) {
+        Room room = findRoom(roomEvent.getRoom().getId(), roomEvent.getRoom().getPassword());
+        if (room == null) throw new RuntimeException();
+
+        ClientThread receiver = findClientThread(roomEvent.getSomeUser());
+        if (receiver != null) {
+            room.removeMember(roomEvent.getSomeUser());
+            room.addBlockedUser(roomEvent.getSomeUser());
+            roomEvent.setSomeUser(clientThread.getUser().getUsername());
+            receiver.sendRemoveFromRoom(roomEvent);
+        }
+    }
+    public void addNewAssistant(RoomEvent roomEvent) {
+        Room room = findRoom(roomEvent.getRoom().getId(), roomEvent.getRoom().getPassword());
+        if (room == null) throw new RuntimeException();
+
+        room.addAssistant(roomEvent.getSomeUser());
+    }
+    public void runRoomGame(RoomEvent roomEvent) {
+        Room room = findRoom(roomEvent.getRoom().getId(), roomEvent.getRoom().getPassword());
+        if (room == null) throw new RuntimeException();
+
+        ArrayList<String> allPeople = room.GetAllPeople();
+        for (String people : allPeople){
+            ClientThread clientThread = findClientThread(people);
+            clientThread.sendRunRoomGame(roomEvent);
+        }
+    }
+    public void verdictRunRoom(RoomEvent roomEvent) {
+        Room room = findRoom(roomEvent.getRoom().getId(), roomEvent.getRoom().getPassword());
+        if (room == null) throw new RuntimeException();
+
+        if (roomEvent.getSomeUser().equals("no")) room.resetGame();
+        else{
+            room.addYes();
+            if (room.readyToStart()) sendStartRoomGame(room);
+        }
+    }
+    private void sendStartRoomGame(Room room) {
+        ArrayList<String> allPeople = room.GetAllPeople();
+        for (String people : allPeople){
+            ClientThread clientThread = findClientThread(people);
+            clientThread.sendStartRoomGame(new RoomEvent(room));
+        }
     }
 }

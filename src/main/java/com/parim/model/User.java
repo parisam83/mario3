@@ -1,11 +1,14 @@
 package com.parim.model;
 
+import com.parim.event.notification.NotificationEvent;
+
 import java.util.ArrayList;
 
 public class User {
     private String username, password;
     private int coins = 100, diamond;
     private final ArrayList<String> chatList = new ArrayList<>(), blockedUsernames = new ArrayList<>();
+    private final ArrayList<NotificationEvent> notifications = new ArrayList<>();
     public User(){}
     public User(String username, String password){
         this.username = username;
@@ -31,6 +34,18 @@ public class User {
     }
     public void removeChatList(String username){
         chatList.remove(username);
+    }
+    public void addNotification(NotificationEvent notificationEvent){
+        notifications.add(notificationEvent);
+    }
+    public void removeNotification(NotificationEvent notificationEvent){
+        for (NotificationEvent notification : notifications)
+            if (notification.getMessage().equals(notificationEvent.getMessage())
+             && notification.getTitle().equals(notificationEvent.getTitle())
+             && notification.getType().equals(notificationEvent.getType())) {
+                notifications.remove(notification);
+                return;
+            }
     }
     // Getters and Setters
     public String getUsername() {
@@ -71,5 +86,9 @@ public class User {
 
     public ArrayList<String> getBlockedUsernames() {
         return blockedUsernames;
+    }
+
+    public ArrayList<NotificationEvent> getNotifications() {
+        return notifications;
     }
 }

@@ -3,6 +3,9 @@ package com.parim;
 import com.parim.event.*;
 import com.parim.event.chat.block.BlockUserEvent;
 import com.parim.event.chat.block.UnblockUserEvent;
+import com.parim.event.notification.NotificationEvent;
+import com.parim.event.notification.UserNotifications;
+import com.parim.event.room.RoomEvent;
 import com.parim.model.Chat;
 import com.parim.model.User;
 
@@ -33,13 +36,26 @@ public class ClientThread extends Thread {
             if (title.equals("BuyItemEvent")) server.receivedBuyItemEvent((BuyItemEvent) clientRespond.getFormEvent(), this);
             if (title.equals("ChatListRequest")) server.receivedChatListRequest(this);
             if (title.equals("MessageEvent")) server.receivedMessageEvent((MessageEvent) clientRespond.getFormEvent(), this);
-            if (title.equals("SendMessageEvent")) server.receivedSendMessageEvent((SendMessageEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("SendMessageEvent")) server.receivedSendMessageEvent((SendMessageEvent) clientRespond.getFormEvent());
             if (title.equals("ListOfBlockedUsernamesEvent")) sendListOfBlockedUsernames();
             if (title.equals("BlockUserEvent")) server.blockUser((BlockUserEvent) clientRespond.getFormEvent(), this);
             if (title.equals("UnblockUserEvent")) server.unblockUser((UnblockUserEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("NewRoomEvent")) server.createNewRoom((RoomEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("JoinRoomEvent")) server.joinRoom((RoomEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("InviteToRoom")) server.inviteToRoom((RoomEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("RemoveFromRoom")) server.removeFromRoom((RoomEvent) clientRespond.getFormEvent(), this);
+            if (title.equals("UserNotifications")) sendUserNotifications();
+            if (title.equals("AddNewAssistant")) server.addNewAssistant((RoomEvent) clientRespond.getFormEvent());
+            if (title.equals("RunRoomGame")) server.runRoomGame((RoomEvent) clientRespond.getFormEvent());
+            if (title.equals("VerdictRunRoom")) server.verdictRunRoom((RoomEvent) clientRespond.getFormEvent());
         }
         server.receivedClientClosedEvent(this);
     }
+
+    private void sendUserNotifications() {
+        connectToClient.send(new Message("UserNotifications", new UserNotifications(user.getNotifications())));
+    }
+
     private void sendListOfBlockedUsernames(){
         connectToClient.send(new Message("ListOfBlockedUsernamesEvent", new ListOfBlockedUsernamesEvent(user.getBlockedUsernames())));
     }
@@ -66,11 +82,32 @@ public class ClientThread extends Thread {
         System.out.println("server of user " + user.getUsername() + " send " + chat.getMessages());
         connectToClient.send(new Message("MessageEvent", new MessageEvent(chat)));
     }
+    public void sendRoomEvent(RoomEvent roomEvent){
+        connectToClient.send(new Message("RoomEvent", roomEvent));
+    }
     public User getUser() {
         return user;
     }
 
     public void setUser(User user) {
         this.user = user;
+    }
+
+    public void sendRemoveFromRoom(RoomEvent roomEvent) {
+        connectToClient.send(new Message("RemoveFromRoom", roomEvent));
+        sendNotificationEvent(roomEvent.getSomeUser(), "You got removed from room " + roomEvent.getRoom().getId(), "Room");
+
+    }
+    public void sendNotificationEvent(String title, String message, String type){
+        user.addNotification(new NotificationEvent(title, message, type));
+        connectToClient.send(new Message("NotificationEvent", new NotificationEvent(title, message, type)));
+    }
+
+    public void sendRunRoomGame(RoomEvent roomEvent) {
+        connectToClient.send(new Message("RunRoomGame", roomEvent));
+    }
+
+    public void sendStartRoomGame(RoomEvent roomEvent) {
+        connectToClient.send(new Message("StartRoomGame", roomEvent));
     }
 }
