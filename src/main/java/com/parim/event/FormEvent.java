@@ -25,6 +25,8 @@ import com.parim.event.room.RoomEvent;
         @JsonSubTypes.Type(value = RoomEvent.class, name = "RoomEvent"),
         @JsonSubTypes.Type(value = NotificationEvent.class, name = "NotificationEvent"),
         @JsonSubTypes.Type(value = UserNotifications.class, name = "UserNotifications"),
+        @JsonSubTypes.Type(value = UserShopEvent.class, name = "UserShopEvent"),
+        @JsonSubTypes.Type(value = ComboBuyItemEvent.class, name = "ComboBuyItemEvent"),
 })
 public interface FormEvent {
 }

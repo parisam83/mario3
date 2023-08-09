@@ -6,9 +6,10 @@ import java.util.ArrayList;
 
 public class User {
     private String username, password;
-    private int coins = 100, diamond;
+    private int coins = 100, diamond = 1, level = 1;
     private final ArrayList<String> chatList = new ArrayList<>(), blockedUsernames = new ArrayList<>();
     private final ArrayList<NotificationEvent> notifications = new ArrayList<>();
+    private ArrayList<String> boughtItems = new ArrayList<>(), havingItems = new ArrayList<>();
     public User(){}
     public User(String username, String password){
         this.username = username;
@@ -46,6 +47,23 @@ public class User {
                 notifications.remove(notification);
                 return;
             }
+    }
+    public void addBoughtItem(String item){
+        addHavingItem(item);
+        boughtItems.add(item);
+    }
+    private void addHavingItem(String item){
+        havingItems.add(item);
+    }
+    public void removeHavingItem(String item){
+        havingItems.remove(item);
+    }
+    public int numberOfBought(String item){
+        int cnt = 0;
+        for (String boughtItem : boughtItems)
+            if (boughtItem.equals(item))
+                cnt++;
+        return cnt;
     }
     // Getters and Setters
     public String getUsername() {
@@ -90,5 +108,29 @@ public class User {
 
     public ArrayList<NotificationEvent> getNotifications() {
         return notifications;
+    }
+
+    public ArrayList<String> getBoughtItems() {
+        return boughtItems;
+    }
+
+    public void setBoughtItems(ArrayList<String> boughtItems) {
+        this.boughtItems = boughtItems;
+    }
+
+    public ArrayList<String> getHavingItems() {
+        return havingItems;
+    }
+
+    public void setHavingItems(ArrayList<String> havingItems) {
+        this.havingItems = havingItems;
+    }
+
+    public int getLevel() {
+        return level;
+    }
+
+    public void setLevel(int level) {
+        this.level = level;
     }
 }

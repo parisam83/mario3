@@ -7,6 +7,7 @@ import com.parim.event.notification.NotificationEvent;
 import com.parim.event.notification.UserNotifications;
 import com.parim.event.room.RoomEvent;
 import com.parim.model.Chat;
+import com.parim.model.ItemOfClient;
 import com.parim.model.User;
 
 import java.net.Socket;
@@ -48,6 +49,7 @@ public class ClientThread extends Thread {
             if (title.equals("AddNewAssistant")) server.addNewAssistant((RoomEvent) clientRespond.getFormEvent());
             if (title.equals("RunRoomGame")) server.runRoomGame((RoomEvent) clientRespond.getFormEvent());
             if (title.equals("VerdictRunRoom")) server.verdictRunRoom((RoomEvent) clientRespond.getFormEvent());
+            if (title.equals("ComboBuyItemEvent")) server.receivedComboBuyItemEvent((ComboBuyItemEvent) clientRespond.getFormEvent(), this);
         }
         server.receivedClientClosedEvent(this);
     }
@@ -70,13 +72,19 @@ public class ClientThread extends Thread {
         connectToClient.send(new Message(result, null));
     }
     public void sendItemEvent(ItemEvent itemEvent){
+        sendUserShopEvent();
         connectToClient.send(new Message("ItemEvent", itemEvent));
     }
     public void sendComboItemEvent(ItemEvent comboItemEvent){
         connectToClient.send(new Message("ComboItemEvent", comboItemEvent));
     }
-    public void sendBuyItemEvent(BuyItemEvent buyItemEvent){
-        connectToClient.send(new Message("BuyItemEvent", buyItemEvent));
+    public void sendItemBoughtEvent(){
+        connectToClient.send(new Message("ItemBought", null));
+        server.receivedItemEvent(this);
+    }
+    public void sendUserShopEvent(){
+        // System.out.println(user.getCoins() + ", " + user.getDiamond());
+        connectToClient.send(new Message("UserShopEvent", new UserShopEvent(user.getCoins(), user.getDiamond())));
     }
     public void sendMessageEvent(Chat chat){
         System.out.println("server of user " + user.getUsername() + " send " + chat.getMessages());
